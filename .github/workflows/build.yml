@@ -1,0 +1,57 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 OKTET LTD
+name: Build
+on:
+  workflow_dispatch:
+env:
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1 # Skip download when running browser `pnpm install`
+  BUBLIK_UI_LOCATION: bublik-ui
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20]
+    steps:
+      # Checkout current code
+      - name: Checkout
+        uses: actions/checkout@v4
+      # Checkout bublik-ui code to subpath
+      - name: Checkout Bublik-UI
+        uses: actions/checkout@v4
+        with:
+          repository: ts-factory/bublik-ui
+          path: ${{env.BUBLIK_UI_LOCATION}}
+          ref: main
+      # Setup pnpm
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      # Setup node
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache-dependency-path: "**/pnpm-lock.yaml" # THIS PATTERN did the trick for me.
+          cache: "pnpm"
+      # Install deps for parsing JSON config and building via NX
+      - name: Install UI dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+          pnpm install --global nx@latest
+          cd ./${{env.BUBLIK_UI_LOCATION}} && pnpm install
+      # Run build command
+      - name: Build UI
+        id: build
+        run: |
+          chmod +x ./build.sh
+          ./build.sh
+          cd ./${{env.BUBLIK_UI_LOCATION}}
+          # Set the commit SHA as an output variable
+          COMMIT_SHA=$(git rev-parse HEAD)  # Get the current commit SHA
+          echo "commit_sha=${COMMIT_SHA}" >> $GITHUB_OUTPUT
+      - name: Commit Files
+        uses: EndBug/add-and-commit@v9
+        with:
+          message: "Artifact for original SHA: ${{ steps.build.outputs.commit_sha }}"

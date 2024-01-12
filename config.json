@@ -1,0 +1,10 @@
+[
+  {
+    "base": "/v2",
+    "output": "v2"
+  },
+  {
+    "base": "/bublik/v2",
+    "output": "bublik-v2"
+  }
+]
