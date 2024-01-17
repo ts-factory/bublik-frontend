@@ -9,12 +9,12 @@ echo "Current working directory: $CWD"
 echo "Bublik UI location: $BUBLIK_UI_LOCATION"
 echo "------------------------"
 
-rm -r $CWD/dist/*
+rm -r "$CWD"/dist/*
 
 # Get the JSON array from the output
-JSON_ARRAY=$(cat $CWD/config.json | jq -c '.[]')
+JSON_ARRAY=$(cat "$CWD"/config.json | jq -c '.[]')
 
-cd $BUBLIK_UI_LOCATION
+cd "$BUBLIK_UI_LOCATION" || exit
 
     # Iterate through each item in the JSON array
     while IFS= read -r ITEM; do
@@ -29,5 +29,5 @@ cd $BUBLIK_UI_LOCATION
         echo "#############################################"
 
         # Run build command
-        BASE_URL="$BASE_URL" nx run bublik:build --base="$BASE_URL" --outputPath=$CWD/dist/$OUTPUT_FOLDER
+        BASE_URL="$BASE_URL" nx run bublik:build --base="$BASE_URL" --outputPath=../dist/"$OUTPUT_FOLDER"
     done <<< "$JSON_ARRAY"
