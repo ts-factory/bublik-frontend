@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: 2024 OKTET LTD
 CWD=$(pwd)
-BUBLIK_UI_LOCATION=$CWD/$BUBLIK_UI_LOCATION
+BUBLIK_UI_LOCATION=$BUBLIK_UI_LOCATION
 
 echo "------------------------"
 echo "Current working directory: $CWD"
