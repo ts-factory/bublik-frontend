@@ -29,5 +29,5 @@ cd "$BUBLIK_UI_LOCATION" || exit
         echo "#############################################"
 
         # Run build command
-        BASE_URL="$BASE_URL" nx run bublik:build --base="$BASE_URL" --outputPath=../dist/"$OUTPUT_FOLDER"
+        BASE_URL="$BASE_URL" nx run bublik:build --base="$BASE_URL" --outputPath=../dist/"$OUTPUT_FOLDER" --sourcemap="true"
     done <<< "$JSON_ARRAY"
