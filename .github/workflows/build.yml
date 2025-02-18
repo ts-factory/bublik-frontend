@@ -13,35 +13,59 @@ jobs:
       matrix:
         node-version: [20]
     steps:
-      # Checkout current code
       - name: Checkout
         uses: actions/checkout@v4
-      # Checkout bublik-ui code to subpath
+
       - name: Checkout Bublik-UI
         uses: actions/checkout@v4
         with:
           repository: ts-factory/bublik-ui
           path: ${{env.BUBLIK_UI_LOCATION}}
           ref: main
-      # Setup pnpm
+          fetch-depth: 0
+          
+      - name: Get UI tag
+        id: get-tag
+        working-directory: ${{env.BUBLIK_UI_LOCATION}}
+        run: |
+          TAG=$(git describe --tags --abbrev=0)
+          if [ $? -ne 0 ]; then
+            echo "Error: No tags found in the repository"
+            exit 1
+          fi
+          
+          # Get the commit SHA that the tag points to
+          TAG_SHA=$(git rev-list -n 1 $TAG)
+          # Get the current commit SHA
+          CURRENT_SHA=$(git rev-parse HEAD)
+          
+          if [ "$TAG_SHA" != "$CURRENT_SHA" ]; then
+            echo "Error: Latest tag $TAG is not pointing to the current commit"
+            echo "Tag SHA: $TAG_SHA"
+            echo "Current SHA: $CURRENT_SHA"
+            exit 1
+          fi
+          
+          echo "ui_tag=${TAG}" >> $GITHUB_OUTPUT
+
       - uses: pnpm/action-setup@v4
         with:
           version: 9
-      # Setup node
+
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache-dependency-path: "**/pnpm-lock.yaml" # THIS PATTERN did the trick for me.
           cache: "pnpm"
-      # Install deps for parsing JSON config and building via NX
+
       - name: Install UI dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y jq
           pnpm install --global nx@latest
           cd ./${{env.BUBLIK_UI_LOCATION}} && pnpm install
-      # Run build command
+
       - name: Build UI
         id: build
         run: |
@@ -51,7 +75,14 @@ jobs:
           # Set the commit SHA as an output variable
           COMMIT_SHA=$(git rev-parse HEAD)  # Get the current commit SHA
           echo "commit_sha=${COMMIT_SHA}" >> $GITHUB_OUTPUT
+
+      - name: Print Tag Info
+        run: |
+          echo "UI Tag: ${{ steps.get-tag.outputs.ui_tag }}"
+          echo "UI Commit SHA: ${{ steps.build.outputs.commit_sha }}"
+
       - name: Commit Files
         uses: EndBug/add-and-commit@v9
         with:
-          message: "Artifact for original SHA: ${{ steps.build.outputs.commit_sha }}"
+          message: "Release: ${{ steps.get-tag.outputs.ui_tag }} (SHA: ${{ steps.build.outputs.commit_sha }})"
+          tag: "${{ steps.get-tag.outputs.ui_tag }}"
