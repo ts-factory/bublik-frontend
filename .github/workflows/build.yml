@@ -68,6 +68,8 @@ jobs:
 
       - name: Build UI
         id: build
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
         run: |
           chmod +x ./build.sh
           ./build.sh
